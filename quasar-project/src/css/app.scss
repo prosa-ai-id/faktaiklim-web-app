@@ -1,0 +1,50 @@
+/* app global css */
+:root {
+  --primary-color: #015198;
+  --action-button: #5852f2;
+}
+html {
+  width: 100%;
+  overflow-x: hidden;
+}
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+  overflow-x: hidden;
+  background-color: white;
+}
+* {
+  box-sizing: border-box;
+}
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+.text-primary {
+  color: var(--primary-color) !important;
+}
+.bg-action {
+  background-color: var(--action-button) !important;
+}
+.text-action {
+  color: var(--action-button) !important;
+}
+.q-btn-dropdown__arrow {
+  display: none;
+}
+.q-btn {
+  text-transform: none;
+  font-size: 16px;
+  font-weight: normal;
+}
+.q-tab {
+  &--active {
+    font-weight: 700;
+  }
+}
+.q-editor__toolbar {
+  height: 37px;
+  padding-top: 2px;
+  background-color: #ededf4;
+}
