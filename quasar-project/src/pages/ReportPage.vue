@@ -28,23 +28,15 @@
                   <label for="source"> Sumber </label>
                 </td>
                 <td>
-                  <form
-                    autocorrect="off"
-                    autocapitalize="off"
-                    autocomplete="off"
-                    spellcheck="false"
-                  >
-                    <q-input
-                      v-model="source"
-                      for="source"
-                      type="textarea"
-                      color="primary"
-                      outlined
-                      placeholder="Tambahkan sumber"
-                      class="form-input-source"
-                      input-style="resize:none;"
-                    />
-                  </form>
+                  <q-select
+                    v-model="source"
+                    :options="sourceOptions"
+                    for="source"
+                    color="primary"
+                    outlined
+                    placeholder="Tambahkan sumber"
+                    class="form-input-source"
+                  />
                 </td>
               </tr>
               <tr>
@@ -58,7 +50,7 @@
                   </label>
                 </td>
                 <td>
-                  <form
+                  <div
                     autocorrect="off"
                     autocapitalize="off"
                     autocomplete="off"
@@ -86,41 +78,65 @@
                       @input="countTotalChar()"
                       @paste="(evt) => pasteCapture(evt)"
                     />
-                  </form>
-                  <div class="character-count">
+                  </div>
+                  <div
+                    class="character-count"
+                    :style="{ color: charCount === 0 ? 'red' : '' }"
+                  >
                     {{ $thousand(charCount) }} karakter
                   </div>
                 </td>
               </tr>
               <tr>
                 <td>
-                  <label
-                    id="borderTopic"
-                    for="topic"
-                    @click="$refs.category.focus()"
-                  >
+                  <label id="borderTopic" for="topic">
                     Topik<span class="red">*</span>
                   </label>
                 </td>
                 <td>
-                  <q-select
-                    ref="topic"
-                    v-model="topicModel"
+                  <q-input
+                    v-model="topic"
                     for="topic"
                     color="primary"
-                    filled
-                    dense
-                    :options="topicOptions"
-                    dropdown-icon="keyboard_arrow_down"
+                    outlined
+                    placeholder="Tambahkan topik"
                     class="form-input-topic"
+                    @keyup.enter="addTopic()"
                   />
+                  <div v-if="!topicList.length" class="form-info-topic">
+                    Tekan Enter untuk menambahkan topik baru
+                  </div>
+                  <div v-else>
+                    <div class="form-topic">
+                      <div class="form-list-topic">
+                        <div
+                          v-for="(item, index) in topicList"
+                          :key="index"
+                          class="form-box-topic"
+                        >
+                          {{ item }}
+                          <div
+                            class="form-close-topic"
+                            @click="removeTopic(index)"
+                          >
+                            <q-icon name="cancel" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </td>
               </tr>
               <tr>
                 <td />
                 <td>
                   <div class="vertical-line">
-                    <span class="red">*</span>Masukan bersifat wajib diisi
+                    <div>
+                      <span class="red">*</span>Masukan bersifat wajib diisi
+                    </div>
+                    <div class="text-italic">
+                      *Pastikan informasi yang Anda masukkan sudah benar
+                    </div>
                   </div>
                   <div class="button-container">
                     <q-btn
@@ -159,28 +175,25 @@ export default {
   },
   data: () => ({
     title: "",
-    source: "",
+    source: "Umum",
+    sourceOptions: ["Website FaktaIklim", "Chatbot FaktaIklim", "Umum"],
     narration: "",
     charCount: 0,
-    topicModel: "Pilih topik",
-    topicOptions: [],
+    topic: "",
+    topicList: [],
     stripFormatting: false,
   }),
-  async mounted() {
-    await this.topicList();
+  mounted() {
+    if (this.$report.active) {
+      this.title = this.$report.title;
+      this.source = this.$report.source;
+      this.narration = this.$report.narration;
+      this.countTotalChar();
+      this.topicList = [...this.$report.topicList];
+      this.$report.active = false;
+    }
   },
   methods: {
-    async topicList() {
-      const response = await this.$api({
-        method: "get",
-        url: "/api/topic/list/",
-        params: {
-          order: "name",
-          sort: "asc",
-        },
-      });
-      this.topicOptions = response.data.data.map((item) => item.name).sort();
-    },
     countTotalChar() {
       this.charCount = this.narration.replace(/(<([^>]+)>)/gi, "").length;
     },
@@ -188,7 +201,7 @@ export default {
       return (
         this.title.trim() === "" ||
         !this.narration.replace(/(<([^>]+)>)/gi, "").trim().length ||
-        this.topicModel === "Pilih topik"
+        !this.topicList.length
       );
     },
     async send() {
@@ -204,7 +217,7 @@ export default {
               .replaceAll("</div>", "</div> ")
               .replace(/(<([^>]+)>)/gi, "")
               .trim(),
-            topic: this.topicModel,
+            topic: this.topicList.join(", "),
           },
         });
         this.$refs.modalSuccess.text =
@@ -244,6 +257,15 @@ export default {
         this.stripFormatting = false;
       }
     },
+    addTopic() {
+      if (this.topic.trim()) {
+        this.topicList.push(this.topic);
+        this.topic = "";
+      }
+    },
+    removeTopic(index) {
+      this.topicList.splice(index, 1);
+    },
   },
 };
 </script>
@@ -263,7 +285,7 @@ export default {
       font-size: 12px;
     }
     tr td:first-child {
-      width: 100px;
+      width: 75px;
       padding-top: 7px;
     }
     .red {
@@ -311,10 +333,9 @@ export default {
       .q-field__marginal,
       .q-field__native,
       .q-field__control {
-        min-height: 55px !important;
-        height: 55px !important;
+        min-height: 30px !important;
+        height: 30px !important;
         font-size: 10px;
-        padding: 4px 6px !important;
       }
     }
     .form-input-narration {
@@ -343,10 +364,42 @@ export default {
         }
       }
     }
+    .form-info-topic {
+      margin-top: 5px;
+      font-size: 10px;
+      color: red;
+    }
+    .form-topic {
+      margin-top: 5px;
+    }
+    .form-list-topic {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 5px;
+    }
+    .form-box-topic {
+      min-height: 20px;
+      padding-left: 6px;
+      padding-right: 6px;
+      background-color: #d6f7ff;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      font-size: 10px;
+      color: #1b1b1b;
+    }
+    .form-close-topic {
+      margin-left: 5px;
+      font-size: 14px;
+      color: #1b1b1b;
+      cursor: pointer;
+    }
     .vertical-line {
+      margin-top: 10px;
       border-top: 1px solid #ededf4;
       padding-top: 10px;
-      font-size: 12px;
+      font-size: 11px;
     }
     .button-container {
       margin-top: 30px;
@@ -387,7 +440,7 @@ export default {
       vertical-align: top;
     }
     tr td:first-child {
-      width: 150px;
+      width: 120px;
       padding-top: 12px;
       font-size: 16px;
     }
@@ -423,6 +476,7 @@ export default {
       .q-field--auto-height .q-field__native,
       .q-field--auto-height .q-field__control,
       .q-field__marginal,
+      .q-field__native,
       .q-field__control {
         min-height: 48px !important;
         height: 48px !important;
@@ -432,9 +486,10 @@ export default {
       .q-field--auto-height .q-field__native,
       .q-field--auto-height .q-field__control,
       .q-field__marginal,
+      .q-field__native,
       .q-field__control {
-        min-height: 110px !important;
-        height: 110px !important;
+        min-height: 48px !important;
+        height: 48px !important;
       }
     }
     .form-input-narration {
@@ -450,22 +505,50 @@ export default {
       .q-field--auto-height .q-field__native,
       .q-field--auto-height .q-field__control,
       .q-field__marginal,
+      .q-field__native,
       .q-field__control {
         min-height: 48px !important;
         height: 48px !important;
-        border-radius: 4px !important;
-        background: #ededf4;
-        font-size: 14px;
-        &::before,
-        &::after {
-          display: none;
-        }
       }
     }
-    .vertical-line {
-      border-top: 1px solid #ededf4;
-      padding-top: 20px;
+    .form-info-topic {
+      margin-top: 10px;
       font-size: 14px;
+      color: red;
+    }
+    .form-topic {
+      margin-top: 15px;
+    }
+    .form-list-topic {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .form-box-topic {
+      min-height: 30px;
+      padding-left: 12px;
+      padding-right: 12px;
+      background-color: #d6f7ff;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      color: #1b1b1b;
+    }
+    .form-close-topic {
+      margin-left: 5px;
+      font-size: 16px;
+      color: #1b1b1b;
+      cursor: pointer;
+    }
+    .vertical-line {
+      margin-top: 15px;
+      border-top: 1px solid #ededf4;
+      padding-top: 15px;
+      font-size: 14px;
+      div {
+        margin-bottom: 5px;
+      }
     }
     .button-container {
       margin-top: 60px;

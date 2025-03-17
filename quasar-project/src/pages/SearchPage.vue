@@ -10,15 +10,22 @@
         <div class="search-container">
           <div class="search-bar">
             <div class="search-input-container">
-              <q-input
-                ref="keywords"
-                v-model="keywords"
-                borderless
-                placeholder="Cari"
-                input-class="search-input"
-                @keyup.enter="search"
-                @update:model-value="warning = false"
-              />
+              <div
+                autocorrect="off"
+                autocapitalize="off"
+                autocomplete="off"
+                spellcheck="false"
+              >
+                <q-input
+                  ref="keywords"
+                  v-model="keywords"
+                  borderless
+                  placeholder="Cari"
+                  input-class="search-input"
+                  @keyup.enter="search"
+                  @update:model-value="warning = false"
+                />
+              </div>
             </div>
             <div class="search-button-container">
               <q-btn
@@ -36,7 +43,7 @@
           <section v-if="show && ready" class="result-section">
             <div class="result-panel">
               <div class="result-text">
-                <span v-if="totalData"> Menampilkan </span>
+                <span v-if="totalData && statusHoax"> Menampilkan </span>
                 <span v-else> Tidak ada </span>
                 hasil pencarian
                 <b
@@ -44,66 +51,183 @@
                   >"</b
                 >
               </div>
-              <div v-if="statusHoax === 'not-hoax'" class="not-hoax-container">
-                <div class="not-hoax-header">
-                  <q-icon name="check_circle" class="not-hoax-icon" />
-                  <div class="not-hoax-title">Bukan Hoaks</div>
+              <div v-if="totalData && statusHoax">
+                <div v-if="statusHoax === 'not-valid'">
+                  <div class="not-valid-container">
+                    <div class="not-valid-header">
+                      <img src="images/search.svg" class="not-valid-image" />
+                      <div class="not-valid-title">
+                        Hasil Analisis Tidak Ditemukan
+                      </div>
+                    </div>
+                    <div class="not-valid-content">
+                      <div class="not-valid-content-title">
+                        "{{ notValid.title }}"
+                      </div>
+                      <div class="not-valid-content-subtitle">
+                        Mohon maaf, kueri yang Anda masukkan tampaknya tidak
+                        valid. Silakan masukkan kueri kembali.
+                      </div>
+                    </div>
+                  </div>
+                  <div class="not-valid-content-info">
+                    <div class="not-valid-content-group">
+                      <div class="not-valid-content-header">
+                        Tentang FaktaIklim:
+                      </div>
+                      <div class="not-valid-content-description">
+                        FaktaIklim adalah platform yang dirancang untuk
+                        memeriksa informasi terkait iklim, apakah informasi
+                        tersebut merupakan hoaks atau bukan.
+                      </div>
+                    </div>
+                    <div class="not-valid-content-group">
+                      <div class="not-valid-content-header">
+                        Contoh Kueri yang Valid:
+                      </div>
+                      <div class="not-valid-content-description">
+                        <ul class="not-valid-content-list">
+                          <li>
+                            "Pemanasan global menyebabkan peningkatan suhu
+                            bumi."
+                          </li>
+                          <li>
+                            "Dampak perubahan iklim terhadap pertanian sangat
+                            signifikan."
+                          </li>
+                          <li>
+                            "Es di Antartika mencair akibat pemanasan global."
+                          </li>
+                          <li>
+                            "Mengurangi jejak karbon dapat membantu mengatasi
+                            perubahan iklim."
+                          </li>
+                        </ul>
+                      </div>
+                      <div class="not-valid-content-description">
+                        Jika kueri Anda sudah berkaitan dengan iklim namun masih
+                        terdeteksi sebagai tidak valid, silakan laporkan kendala
+                        Anda kepada kami.
+                      </div>
+                    </div>
+                    <div class="not-valid-info">
+                      <div class="not-valid-info-cta">
+                        Silakan laporkan kendala Anda
+                        <q-btn
+                          flat
+                          class="not-valid-info-cta-button"
+                          @click="report()"
+                        >
+                          LAPORKAN
+                        </q-btn>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="not-hoax-content">
-                  <div class="not-hoax-content-title">
-                    "{{ notHoax.title }}"
+                <div
+                  v-if="statusHoax === 'not-hoax'"
+                  class="not-hoax-container"
+                >
+                  <div class="not-hoax-header">
+                    <q-icon name="check_circle" class="not-hoax-icon" />
+                    <div class="not-hoax-title">Hasil Analisis Informasi</div>
                   </div>
-                  <div class="not-hoax-content-article">
-                    Informasi yang Anda masukkan tidak terdeteksi sebagai hoaks.
-                    Informasi ini tampaknya akurat, namun tetap disarankan untuk
-                    memeriksa sumber-sumber terpercaya. Dibawah ini merupakan
-                    artikel yang bersesuaian dengan informasi yang anda
-                    masukkan.
+                  <div class="not-hoax-content">
+                    <div class="not-hoax-content-title">
+                      "{{ notHoax.title }}"
+                    </div>
+                    <div class="not-hoax-content-article">
+                      [{{ notHoax.timestamp }}] Berdasarkan referensi pada
+                      database kami saat ini, informasi yang Anda masukkan
+                      <b>tidak terdeteksi sebagai hoaks</b>. Namun tetap
+                      disarankan untuk memeriksa sumber-sumber terpercaya. Di
+                      bawah ini merupakan artikel yang berkaitan dengan
+                      informasi yang Anda masukkan.
+                    </div>
+                    <div class="not-hoax-content-topic">
+                      Topik:
+                      <div class="not-hoax-content-list-topic">
+                        <div
+                          v-for="(item2, index) in notHoax.topic"
+                          :key="index"
+                          class="not-hoax-content-box-topic"
+                        >
+                          {{ item2 }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="not-hoax-info">
+                      <div class="not-hoax-info-cta">
+                        Hasil analisis ini tidak sesuai?
+                        <q-btn
+                          flat
+                          class="not-hoax-info-cta-button"
+                          @click="reportNotHoax()"
+                        >
+                          LAPORKAN
+                        </q-btn>
+                      </div>
+                    </div>
                   </div>
-                  <div class="not-hoax-content-topic">
-                    Topik:
-                    <div class="not-hoax-content-list-topic">
-                      <div
-                        v-for="(item2, index) in notHoax.topic"
-                        :key="index"
-                        class="not-hoax-content-box-topic"
-                      >
-                        {{ item2 }}
+                </div>
+                <div v-if="statusHoax == 'hoax'" class="yes-hoax-container">
+                  <div class="yes-hoax-header">
+                    <q-icon name="cancel" class="yes-hoax-icon" />
+                    <div class="yes-hoax-title">Hasil Analisis Informasi</div>
+                  </div>
+                  <div class="yes-hoax-content">
+                    <div class="yes-hoax-content-title">
+                      "{{ yesHoax.title }}"
+                    </div>
+                    <div class="yes-hoax-content-article">
+                      [{{ yesHoax.timestamp }}] Berdasarkan referensi pada
+                      database kami saat ini, informasi yang Anda masukkan
+                      tampaknya
+                      <b
+                        >kurang sesuai dengan data fakta yang ada dan
+                        {{ yesHoax.text }}</b
+                      >. Harap berhati-hati dan cek kembali sumber sumber
+                      terpercaya untuk memastikan. Di bawah ini merupakan
+                      artikel yang berkaitan dengan informasi yang Anda
+                      masukkan.
+                    </div>
+                    <div class="yes-hoax-content-topic">
+                      Topik:
+                      <div class="yes-hoax-content-list-topic">
+                        <div
+                          v-for="(item2, index) in yesHoax.topic"
+                          :key="index"
+                          class="yes-hoax-content-box-topic"
+                        >
+                          {{ item2 }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="not-hoax-info">
+                      <div class="yes-hoax-info-cta">
+                        Hasil analisis ini tidak sesuai?
+                        <q-btn
+                          flat
+                          class="yes-hoax-info-cta-button"
+                          @click="reportYesHoax()"
+                        >
+                          LAPORKAN
+                        </q-btn>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div v-if="statusHoax === 'hoax'" class="yes-hoax-container">
-                <div class="yes-hoax-header">
-                  <q-icon name="cancel" class="yes-hoax-icon" />
-                  <div class="yes-hoax-title">Hoaks</div>
-                </div>
-                <div class="yes-hoax-content">
-                  <div class="yes-hoax-content-title">
-                    "{{ yesHoax.title }}"
-                  </div>
-                  <div class="yes-hoax-content-article">
-                    Informasi yang Anda masukkan terdeteksi sebagai hoaks. Harap
-                    berhati-hati dan jangan sebarkan informasi ini. Dibawah ini
-                    merupakan artikel yang bersesuaian dengan informasi yang
-                    anda masukkan.
-                  </div>
-                  <div class="yes-hoax-content-topic">
-                    Topik:
-                    <div class="yes-hoax-content-list-topic">
-                      <div
-                        v-for="(item2, index) in yesHoax.topic"
-                        :key="index"
-                        class="yes-hoax-content-box-topic"
-                      >
-                        {{ item2 }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div
+                v-if="totalData && statusHoax && statusHoax !== 'not-valid'"
+                class="result-caption"
+              >
+                Hasil di atas merujuk pada artikel berikut
               </div>
-              <div class="result-container">
+              <div
+                v-if="totalData && statusHoax && statusHoax !== 'not-valid'"
+                class="result-container"
+              >
                 <q-card
                   v-for="item in tableData"
                   :key="item.id"
@@ -129,19 +253,31 @@
                     </div>
                   </div>
                   <div class="result-info">
-                    <div class="result-info-date">
-                      <q-icon name="schedule" class="result-info-icon">
-                        <q-tooltip> Tanggal </q-tooltip>
-                      </q-icon>
-                      <div class="result-info-text">
-                        {{ item.date }}
-                      </div>
+                    <div class="result-info-cta">
+                      Artikel ini tidak sesuai?
+                      <q-btn
+                        flat
+                        class="result-info-cta-button"
+                        @click="
+                          (e) => {
+                            e.stopPropagation();
+                            reportArticle(item.title, item.topic);
+                          }
+                        "
+                      >
+                        LAPORKAN
+                      </q-btn>
                     </div>
+                    <div class="result-info-date"></div>
                   </div>
                 </q-card>
               </div>
             </div>
-            <div v-show="maxPages" class="pagination-container">
+            <div
+              v-if="totalData && statusHoax && statusHoax !== 'not-valid'"
+              v-show="maxPages"
+              class="pagination-container"
+            >
               <div class="pagination-wrapper">
                 <div class="pagination-info">
                   {{ recordStart }} - {{ recordEnd }} dari {{ recordTotal }}
@@ -170,14 +306,23 @@
         </div>
       </div>
     </section>
+    <SectionCTA />
+    <SectionCollaboration />
+    <SectionFooter />
   </div>
 </template>
 
 <script>
 import BreadcrumbsComponent from "components/BreadcrumbsComponent.vue";
+import SectionCTA from "components/SectionCTA.vue";
+import SectionCollaboration from "components/SectionCollaboration.vue";
+import SectionFooter from "components/SectionFooter.vue";
 export default {
   components: {
     BreadcrumbsComponent,
+    SectionCTA,
+    SectionCollaboration,
+    SectionFooter,
   },
   data: () => ({
     keywords: "",
@@ -194,6 +339,7 @@ export default {
     recordTotal: 0,
     statusHoax: "",
     notHoax: {},
+    notValid: {},
     yesHoax: {},
     articleHoax: [],
   }),
@@ -237,17 +383,33 @@ export default {
       for (const [key, value] of Object.entries(data.topic.result.topic)) {
         topic.push(key);
       }
-      if (data.hoax_probability > 0.5) {
-        this.statusHoax = "hoax";
-        this.yesHoax = {
+      if (data.hoax_probability < 0) {
+        this.statusHoax = "";
+      } else if (!topic.length) {
+        this.statusHoax = "not-valid";
+        this.notValid = {
           title: this.text,
-          topic: topic,
         };
-      } else {
+      } else if (data.hoax_probability == 0) {
         this.statusHoax = "not-hoax";
         this.notHoax = {
           title: this.text,
           topic: topic,
+          timestamp: this.$moment().format("DD-MM-YYYY"),
+        };
+      } else {
+        this.statusHoax = "hoax";
+        this.yesHoax = {
+          title: this.text,
+          topic: topic,
+          score: Math.round(data.hoax_probability * 100),
+          text:
+            data.hoax_probability < 0.5
+              ? "kemungkinan kecil berpotensi sebagai hoaks"
+              : data.hoax_probability < 0.8
+              ? "cenderung berpotensi sebagai hoaks"
+              : "kemungkinan besar berpotensi sebagai hoaks",
+          timestamp: this.$moment().format("DD-MM-YYYY"),
         };
       }
       this.articleHoax = data.relevant_item;
@@ -271,14 +433,13 @@ export default {
         if (index + 1 >= this.recordStart && index + 1 <= this.recordEnd) {
           item.content = item.content.replace(/(<([^>]+)>)/gi, "");
           this.tableData.push({
-            title:
-              this.statusHoax === "hoax" ? "[Hoaks] " + item.title : item.title,
+            title: item.title,
             source: item.url,
             article:
               item.content.length > 300
                 ? item.content.substr(0, 300) + "..."
                 : item.content,
-            topic: item.category ? item.category.split(",") : "",
+            topic: item.category ? item.category.split("\n") : "",
             date: this.$moment(item.created_at).format("DD-MM-YYYY"),
           });
         }
@@ -289,6 +450,47 @@ export default {
     },
     goToPage() {
       this.resultIssue(this.currentPage);
+    },
+    report() {
+      this.$router.push("/report");
+    },
+    reportNotHoax() {
+      this.$report.active = true;
+      this.$report.title = "Kesalahan hasil prediksi sistem";
+      this.$report.source = "Website FaktaIklim";
+      this.$report.narration =
+        'Hasil prediksi sistem untuk kueri "<b>' +
+        this.text +
+        '</b>" tidak terdeteksi sebagai hoaks menurut saya kurang tepat karena ...';
+      this.$report.topicList = [...this.notHoax.topic];
+      this.$router.push("/report");
+    },
+    reportYesHoax() {
+      this.$report.active = true;
+      this.$report.title = "Kesalahan hasil prediksi sistem";
+      this.$report.source = "Website FaktaIklim";
+      this.$report.narration =
+        'Hasil prediksi sistem untuk kueri "<b>' +
+        this.text +
+        '</b>" kemungkinan ' +
+        this.yesHoax.score +
+        "% hoaks menurut saya kurang tepat karena ...";
+      this.$report.topicList = [...this.yesHoax.topic];
+      this.$router.push("/report");
+    },
+    reportArticle(title, topicList) {
+      this.$report.active = true;
+      this.$report.title = "Artikel kurang tepat";
+      this.$report.source = "Website FaktaIklim";
+      this.$report.narration =
+        'Artikel dengan judul "' +
+        title +
+        '" menurut saya kurang tepat karena ...';
+      this.$report.topicList = [...topicList];
+      this.$router.push("/report");
+    },
+    chatbot() {
+      window.open(process.env.TELEGRAM_CHATBOT_URL);
     },
   },
 };
@@ -364,6 +566,92 @@ export default {
         color: #2e68fd;
       }
     }
+    .not-valid-container {
+      margin-top: 15px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .not-valid-header {
+      padding: 0 20px;
+      background: linear-gradient(180deg, #969696 0%, #535353 100%);
+      height: 38px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .not-valid-image {
+      width: 18px;
+    }
+    .not-valid-title {
+      font-weight: 700;
+      font-size: 15px;
+      color: #f2f2f2;
+    }
+    .not-valid-content {
+      padding: 15px 20px;
+      background-color: #f9f9f9;
+    }
+    .not-valid-content-title {
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 20px;
+      color: #1f1f1f;
+    }
+    .not-valid-content-subtitle {
+      margin-top: 10px;
+      font-size: 12px;
+      color: black;
+    }
+    .not-valid-content-info {
+      padding: 0 20px;
+    }
+    .not-valid-content-group {
+      margin-top: 15px;
+      margin-bottom: 15px;
+    }
+    .not-valid-content-header {
+      font-weight: 700;
+      font-size: 10px;
+      line-height: 15px;
+      color: black;
+    }
+    .not-valid-content-description {
+      margin-top: 3px;
+      font-size: 10px;
+      line-height: 15px;
+      color: black;
+    }
+    .not-valid-content-list {
+      margin-top: -2px;
+      margin-bottom: 10px;
+      padding-left: 20px;
+    }
+    .not-valid-info {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #1a59ad;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .not-valid-info-cta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      column-gap: 10px;
+      row-gap: 5px;
+      color: #484848;
+      font-size: 10px;
+    }
+    .not-valid-info-cta-button {
+      color: #0465e4;
+      border: 1px solid #0465e4;
+      border-radius: 5px;
+      font-family: "Montserrat Bold";
+      font-size: 10px;
+    }
     .not-hoax-container {
       margin-top: 15px;
       border-radius: 10px;
@@ -405,7 +693,7 @@ export default {
     }
     .not-hoax-content-topic {
       margin-top: 15px;
-      font-size: 8px;
+      font-size: 10px;
       line-height: 15px;
       display: flex;
       align-items: center;
@@ -424,8 +712,33 @@ export default {
       border-radius: 4px;
       display: flex;
       align-items: center;
-      font-size: 7px;
+      font-size: 10px;
       background-color: white;
+    }
+    .not-hoax-info {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #1a59ad;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .not-hoax-info-cta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      column-gap: 10px;
+      row-gap: 5px;
+      color: #484848;
+      font-size: 10px;
+    }
+    .not-hoax-info-cta-button {
+      color: #0465e4;
+      border: 1px solid #0465e4;
+      border-radius: 5px;
+      font-family: "Montserrat Bold";
+      font-size: 10px;
     }
     .yes-hoax-container {
       margin-top: 15px;
@@ -468,7 +781,7 @@ export default {
     }
     .yes-hoax-content-topic {
       margin-top: 15px;
-      font-size: 8px;
+      font-size: 10px;
       line-height: 15px;
       display: flex;
       align-items: center;
@@ -487,8 +800,38 @@ export default {
       border-radius: 4px;
       display: flex;
       align-items: center;
-      font-size: 7px;
+      font-size: 10px;
       background-color: white;
+    }
+    .yes-hoax-info {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #1a59ad;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .yes-hoax-info-cta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      color: #484848;
+      font-size: 10px;
+    }
+    .yes-hoax-info-cta-button {
+      color: #0465e4;
+      border: 1px solid #0465e4;
+      border-radius: 5px;
+      font-family: "Montserrat Bold";
+      font-size: 10px;
+    }
+    .result-caption {
+      margin-top: 30px;
+      font-weight: 700;
+      font-size: 13px;
+      text-align: center;
     }
     .result-container {
       margin-top: 15px;
@@ -517,41 +860,56 @@ export default {
     }
     .result-topic {
       margin-top: 10px;
-      font-size: 8px;
+      font-size: 10px;
       line-height: 15px;
       display: flex;
-      align-items: center;
+      align-items: baseline;
       gap: 6px;
       color: black;
     }
     .result-list-topic {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 5px;
     }
     .result-box-topic {
-      height: 15px;
+      min-height: 15px;
       padding-left: 6px;
       padding-right: 6px;
       border: 1px solid #a49999;
       border-radius: 4px;
       display: flex;
       align-items: center;
-      font-size: 8px;
+      font-size: 10px;
     }
     .result-info {
       margin-top: 10px;
+      padding-top: 5px;
+      border-top: 1px solid #dce3eb;
       display: flex;
+      justify-content: space-between;
       align-items: center;
       gap: 10px;
     }
-    .result-info-author {
+    .result-info-cta {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 4px;
+      column-gap: 10px;
+      row-gap: 5px;
+      color: #484848;
+      font-size: 10px;
+    }
+    .result-info-cta-button {
+      color: #0465e4;
+      border: 1px solid #0465e4;
+      border-radius: 5px;
+      font-family: "Montserrat Bold";
       font-size: 10px;
     }
     .result-info-date {
+      text-wrap: nowrap;
       display: flex;
       align-items: center;
       gap: 4px;
@@ -568,9 +926,9 @@ export default {
       line-height: 12px;
     }
     .pagination-container {
-      margin-top: 30px;
+      margin-top: 15px;
       display: flex;
-      flex-direction: column;
+      justify-content: right;
       align-items: center;
     }
     .pagination-wrapper {
@@ -662,6 +1020,91 @@ export default {
         color: #2e68fd;
       }
     }
+    .not-valid-container {
+      margin-top: 30px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .not-valid-header {
+      padding: 0 40px;
+      background: linear-gradient(180deg, #969696 0%, #535353 100%);
+      height: 76px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .not-valid-image {
+      width: auto;
+    }
+    .not-valid-title {
+      font-weight: 700;
+      font-size: 30px;
+      color: #f2f2f2;
+    }
+    .not-valid-content {
+      padding: 30px 40px;
+      background-color: #f9f9f9;
+    }
+    .not-valid-content-title {
+      font-weight: 700;
+      font-size: 30px;
+      line-height: 35.16px;
+      color: #1f1f1f;
+    }
+    .not-valid-content-subtitle {
+      margin-top: 20px;
+      font-size: 24px;
+      line-height: 30px;
+      color: black;
+    }
+    .not-valid-content-info {
+      padding: 0 40px;
+    }
+    .not-valid-content-group {
+      margin-top: 15px;
+      margin-bottom: 15px;
+    }
+    .not-valid-content-header {
+      font-weight: 700;
+      font-size: 20px;
+      line-height: 30px;
+      color: black;
+    }
+    .not-valid-content-description {
+      margin-top: 6px;
+      font-size: 20px;
+      line-height: 30px;
+      color: black;
+    }
+    .not-valid-content-list {
+      margin-top: -2px;
+      margin-bottom: 10px;
+      padding-left: 30px;
+    }
+    .not-valid-info {
+      margin-top: 23px;
+      padding-top: 15px;
+      border-top: 1px solid #1a59ad;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+    .not-valid-info-cta {
+      color: #484848;
+      font-size: 18px;
+    }
+    .not-valid-info-cta-button {
+      width: 115px;
+      height: 35px;
+      margin-left: 20px;
+      color: #0465e4;
+      border: 1px solid #0465e4;
+      border-radius: 5px;
+      font-family: "Montserrat Bold";
+      font-size: 16px;
+    }
     .not-hoax-container {
       margin-top: 30px;
       border-radius: 10px;
@@ -703,7 +1146,7 @@ export default {
     }
     .not-hoax-content-topic {
       margin-top: 30px;
-      font-size: 12px;
+      font-size: 16px;
       line-height: 30px;
       display: flex;
       align-items: center;
@@ -723,8 +1166,31 @@ export default {
       border-radius: 4px;
       display: flex;
       align-items: center;
-      font-size: 14px;
+      font-size: 16px;
       background-color: white;
+    }
+    .not-hoax-info {
+      margin-top: 23px;
+      padding-top: 15px;
+      border-top: 1px solid #1a59ad;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+    .not-hoax-info-cta {
+      color: #484848;
+      font-size: 18px;
+    }
+    .not-hoax-info-cta-button {
+      width: 115px;
+      height: 35px;
+      margin-left: 20px;
+      color: #0465e4;
+      border: 1px solid #0465e4;
+      border-radius: 5px;
+      font-family: "Montserrat Bold";
+      font-size: 16px;
     }
     .yes-hoax-container {
       margin-top: 30px;
@@ -767,7 +1233,7 @@ export default {
     }
     .yes-hoax-content-topic {
       margin-top: 30px;
-      font-size: 12px;
+      font-size: 16px;
       line-height: 30px;
       display: flex;
       align-items: center;
@@ -787,8 +1253,37 @@ export default {
       border-radius: 4px;
       display: flex;
       align-items: center;
-      font-size: 14px;
+      font-size: 16px;
       background-color: white;
+    }
+    .yes-hoax-info {
+      margin-top: 23px;
+      padding-top: 15px;
+      border-top: 1px solid #1a59ad;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+    .yes-hoax-info-cta {
+      color: #484848;
+      font-size: 18px;
+    }
+    .yes-hoax-info-cta-button {
+      width: 115px;
+      height: 35px;
+      margin-left: 20px;
+      color: #0465e4;
+      border: 1px solid #0465e4;
+      border-radius: 5px;
+      font-family: "Montserrat Bold";
+      font-size: 16px;
+    }
+    .result-caption {
+      margin-top: 60px;
+      font-weight: 700;
+      font-size: 24px;
+      text-align: center;
     }
     .result-container {
       margin-top: 30px;
@@ -817,7 +1312,7 @@ export default {
     }
     .result-topic {
       margin-top: 16px;
-      font-size: 14px;
+      font-size: 16px;
       line-height: 30px;
       display: flex;
       align-items: center;
@@ -830,7 +1325,7 @@ export default {
       gap: 10px;
     }
     .result-box-topic {
-      height: 30px;
+      min-height: 30px;
       padding-top: 2px;
       padding-left: 12px;
       padding-right: 12px;
@@ -838,18 +1333,30 @@ export default {
       border-radius: 4px;
       display: flex;
       align-items: center;
-      font-size: 14px;
+      font-size: 16px;
     }
     .result-info {
       margin-top: 23px;
+      padding-top: 15px;
+      border-top: 2px solid #dce3eb;
       display: flex;
+      justify-content: space-between;
       align-items: center;
       gap: 20px;
     }
-    .result-info-author {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .result-info-cta {
+      color: #484848;
+      font-size: 18px;
+    }
+    .result-info-cta-button {
+      width: 115px;
+      height: 35px;
+      margin-left: 20px;
+      color: #0465e4;
+      border: 1px solid #0465e4;
+      border-radius: 5px;
+      font-family: "Montserrat Bold";
+      font-size: 16px;
     }
     .result-info-date {
       display: flex;
@@ -867,7 +1374,7 @@ export default {
       line-height: 16.41px;
     }
     .pagination-container {
-      margin-top: 60px;
+      margin-top: 30px;
       display: flex;
       justify-content: right;
       align-items: center;

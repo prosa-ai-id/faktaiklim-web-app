@@ -2,11 +2,13 @@ import axios from "axios";
 import moment from "moment";
 import { boot } from "quasar/wrappers";
 import { searchStore } from "src/stores/search";
+import { reportStore } from "src/stores/report";
 
 const baseURL = process.env.BACKEND_HOST;
 const api = axios.create({ baseURL: baseURL });
 
 const search = searchStore();
+const report = reportStore();
 
 const goTo = function (url) {
   if (this.$route.path !== url) {
@@ -41,6 +43,7 @@ export default boot(({ app }) => {
   app.config.globalProperties.$axios = axios;
   app.config.globalProperties.$api = api;
   app.config.globalProperties.$search = search;
+  app.config.globalProperties.$report = report;
   app.config.globalProperties.$goTo = goTo;
   app.config.globalProperties.$moment = moment;
   app.config.globalProperties.$thousand = thousand;

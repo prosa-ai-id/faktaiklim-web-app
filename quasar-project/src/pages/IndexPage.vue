@@ -4,23 +4,31 @@
       <div class="search-background">
         <div class="search-content">
           <div class="search-title">
-            Verifikasi Hoaks atau Temukan Fakta Iklim
+            Telusuri Informasi Hoaks atau Temukan Fakta Iklim
           </div>
           <div class="search-description">
-            Verifikasi informasi yang anda dapatkan dan telusuri berita hoaks
-            berkaitan dengan iklim
+            Telusuri informasi yang ingin Anda ketahui dalam
+            <b>bahasa Indonesia, Bali, Bugis, dan Minangkabau</b> berkaitan
+            dengan iklim dan dapatkan prediksi hasilnya.
           </div>
           <div class="search-bar">
             <div class="search-input-container">
-              <q-input
-                ref="keywords"
-                v-model="keywords"
-                borderless
-                placeholder="Cari"
-                input-class="search-input"
-                @keyup.enter="search"
-                @update:model-value="warning = false"
-              />
+              <div
+                autocorrect="off"
+                autocapitalize="off"
+                autocomplete="off"
+                spellcheck="false"
+              >
+                <q-input
+                  ref="keywords"
+                  v-model="keywords"
+                  borderless
+                  placeholder="Cari"
+                  input-class="search-input"
+                  @keyup.enter="search()"
+                  @update:model-value="warning = false"
+                />
+              </div>
             </div>
             <div class="search-button-container">
               <q-btn
@@ -28,11 +36,20 @@
                 icon="search"
                 :disable="!keywords.trim()"
                 class="search-button"
-                @click="search"
+                @click="search()"
               />
             </div>
-            <div v-if="warning" class="search-warning">
-              Mohon masukkan minimal 3 kata untuk melanjutkan
+          </div>
+          <div v-if="warning" class="search-warning">
+            Mohon masukkan minimal 3 kata untuk melanjutkan
+          </div>
+          <div class="search-disclaimer">
+            <div><q-icon name="error" /></div>
+            <div>
+              Hasil prediksi dan informasi yang ditampilkan berdasarkan data
+              yang ada dalam sistem. Jika Anda menemukan ketidaksesuaian data
+              atau hasil prediksi, silakan laporkan temuan Anda melalui fitur
+              laporan pada website ini.
             </div>
           </div>
         </div>
@@ -102,6 +119,21 @@
             </div>
           </div>
           <div class="recent-info">
+            <div class="recent-info-cta">
+              Artikel ini tidak sesuai?
+              <q-btn
+                flat
+                class="recent-info-cta-button"
+                @click="
+                  (e) => {
+                    e.stopPropagation();
+                    reportArticle(item.title, item.topic);
+                  }
+                "
+              >
+                LAPORKAN
+              </q-btn>
+            </div>
             <div class="recent-info-date">
               <q-icon name="schedule" class="recent-info-icon">
                 <q-tooltip> Tanggal </q-tooltip>
@@ -163,6 +195,21 @@
                 </div>
               </div>
               <div class="recent-info">
+                <div class="recent-info-cta">
+                  Artikel ini tidak sesuai?
+                  <q-btn
+                    flat
+                    class="recent-info-cta-button"
+                    @click="
+                      (e) => {
+                        e.stopPropagation();
+                        reportArticle(item.title, item.topic);
+                      }
+                    "
+                  >
+                    LAPORKAN
+                  </q-btn>
+                </div>
                 <div class="recent-info-date">
                   <q-icon name="schedule" class="recent-info-icon">
                     <q-tooltip> Tanggal </q-tooltip>
@@ -200,29 +247,9 @@
         </div>
       </div>
     </section>
-    <section class="cta-section">
-      <div class="cta-panel">
-        <div class="cta-container">
-          <div>
-            <div class="cta-text">
-              Lawan Misinformasi Iklim Bersama! Verifikasi informasi atau
-              laporkan hoaks iklim langsung lewat chatbot Telegram kami
-            </div>
-            <div class="cta-button">
-              <q-btn flat class="cta-button-analysis" @click="chatbot()">
-                ANALISIS HOAKS
-              </q-btn>
-              <q-btn flat class="cta-button-report" @click="report()">
-                LAPORKAN HOAKS
-              </q-btn>
-            </div>
-          </div>
-          <div class="cta-image-container">
-            <img src="/images/cta.svg" alt="CTA Image" class="cta-image" />
-          </div>
-        </div>
-      </div>
-    </section>
+    <SectionCTA />
+    <SectionCollaboration />
+    <SectionFooter />
   </div>
 </template>
 
@@ -230,11 +257,17 @@
 import BarChart from "components/BarChart.vue";
 import DatePicker from "components/DatePicker.vue";
 import EmptyState from "components/EmptyState.vue";
+import SectionCTA from "components/SectionCTA.vue";
+import SectionCollaboration from "components/SectionCollaboration.vue";
+import SectionFooter from "components/SectionFooter.vue";
 export default {
   components: {
     BarChart,
     DatePicker,
     EmptyState,
+    SectionCTA,
+    SectionCollaboration,
+    SectionFooter,
   },
   data: () => ({
     keywords: "",
@@ -431,11 +464,16 @@ export default {
     goToPage() {
       this.topicIssue(this.tab, this.currentPage);
     },
-    report() {
+    reportArticle(title, topicList) {
+      this.$report.active = true;
+      this.$report.title = "Artikel kurang tepat";
+      this.$report.source = "Website FaktaIklim";
+      this.$report.narration =
+        'Artikel dengan judul "' +
+        title +
+        '" menurut saya kurang tepat karena ...';
+      this.$report.topicList = [...topicList];
       this.$router.push("/report");
-    },
-    chatbot() {
-      window.open(process.env.TELEGRAM_CHATBOT_URL);
     },
   },
 };
@@ -444,7 +482,6 @@ export default {
 <style>
 @media (max-width: 768px) {
   #index {
-    padding-bottom: 49px;
     .search-section {
       color: white;
       text-align: center;
@@ -473,7 +510,6 @@ export default {
       margin-top: 10px;
       color: white;
       font-size: 12px;
-      line-height: 14.22px;
     }
     .search-bar {
       width: 100%;
@@ -511,6 +547,20 @@ export default {
       text-align: left;
       font-size: 11px;
       color: yellow;
+    }
+    .search-disclaimer {
+      width: 100%;
+      max-width: 483px;
+      margin: auto;
+      margin-top: 10px;
+      color: white;
+      font-size: 11px;
+      text-align: justify;
+      display: flex;
+      gap: 5px;
+      .q-icon {
+        font-size: 14px;
+      }
     }
     .search-graph {
       padding: 0 20px;
@@ -589,6 +639,7 @@ export default {
       margin: auto;
     }
     .recent-text {
+      margin-bottom: 20px;
       font-family: "Ubuntu Bold";
       font-size: 20px;
       line-height: 23px;
@@ -596,6 +647,9 @@ export default {
     }
     .recent-container {
       margin-top: 15px;
+      padding: 15px;
+      box-shadow: 0px 4px 8px 0px #0000001a;
+      border-radius: 4px;
       cursor: pointer;
     }
     .recent-title {
@@ -614,41 +668,56 @@ export default {
     }
     .recent-topic {
       margin-top: 10px;
-      font-size: 8px;
+      font-size: 10px;
       line-height: 15px;
       display: flex;
-      align-items: center;
+      align-items: baseline;
       gap: 6px;
       color: black;
     }
     .recent-list-topic {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 5px;
     }
     .recent-box-topic {
-      height: 15px;
+      min-height: 15px;
       padding-left: 6px;
       padding-right: 6px;
       border: 1px solid #a49999;
       border-radius: 4px;
       display: flex;
       align-items: center;
-      font-size: 8px;
+      font-size: 10px;
     }
     .recent-info {
       margin-top: 10px;
+      padding-top: 5px;
+      border-top: 1px solid #dce3eb;
       display: flex;
+      justify-content: space-between;
       align-items: center;
       gap: 10px;
     }
-    .recent-info-author {
+    .recent-info-cta {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 4px;
+      column-gap: 10px;
+      row-gap: 5px;
+      color: #484848;
+      font-size: 10px;
+    }
+    .recent-info-cta-button {
+      color: #0465e4;
+      border: 1px solid #0465e4;
+      border-radius: 5px;
+      font-family: "Montserrat Bold";
       font-size: 10px;
     }
     .recent-info-date {
+      text-wrap: nowrap;
       display: flex;
       align-items: center;
       gap: 4px;
@@ -667,7 +736,7 @@ export default {
     .topic-section {
       background-color: white;
       color: var(--primary-color);
-      padding: 0px 30px 30px 30px;
+      padding: 0px 30px;
     }
     .topic-panel {
       max-width: 768px;
@@ -693,9 +762,9 @@ export default {
       margin-top: 15px;
     }
     .pagination-container {
-      margin-top: 30px;
+      margin-top: 15px;
       display: flex;
-      justify-content: center;
+      justify-content: right;
       align-items: center;
     }
     .pagination-wrapper {
@@ -715,74 +784,11 @@ export default {
       width: 20px;
       height: 20px;
     }
-    .cta-section {
-      margin-top: 50px;
-      padding: 0 30px;
-      background-color: white;
-    }
-    .cta-panel {
-      max-width: 768px;
-      margin: auto;
-    }
-    .cta-container {
-      max-width: 768px;
-      min-height: 137px;
-      background: linear-gradient(180deg, #015198 0%, #000f47 100%);
-      border-radius: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: white;
-      padding: 0 15px;
-    }
-    .cta-text {
-      max-width: 400px;
-      margin-top: 15px;
-      font-family: "Montserrat Bold";
-      font-size: 12px;
-      line-height: 18px;
-    }
-    .cta-button {
-      margin-top: 15px;
-      margin-bottom: 15px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: left;
-      align-items: center;
-      gap: 15px;
-    }
-    .cta-button-analysis {
-      width: 125px;
-      background-color: white;
-      color: var(--primary-color);
-      border-radius: 5px;
-      font-family: "Montserrat Bold";
-      font-size: 10px;
-      line-height: 12px;
-      padding: 8px 11px;
-    }
-    .cta-button-report {
-      width: 125px;
-      color: white;
-      border: 1px solid white;
-      border-radius: 5px;
-      font-family: "Montserrat Bold";
-      font-size: 10px;
-      line-height: 12px;
-      padding: 8px 11px;
-    }
-    .cta-image-container {
-      padding-top: 15px;
-    }
-    .cta-image {
-      height: 120px;
-    }
   }
 }
 
 @media (min-width: 769px) {
   #index {
-    padding-bottom: 98px;
     .search-section {
       color: white;
       text-align: center;
@@ -811,11 +817,10 @@ export default {
       margin-top: 14px;
       color: white;
       font-size: 18px;
-      line-height: 21.33px;
     }
     .search-bar {
       width: 100%;
-      max-width: 954px;
+      max-width: 980px;
       margin: auto;
       margin-top: 40px;
       height: 73px;
@@ -844,11 +849,30 @@ export default {
       font-size: 24px;
     }
     .search-warning {
+      width: 100%;
+      max-width: 980px;
+      margin: auto;
       margin-top: 10px;
-      margin-left: 35px;
+      padding-left: 35px;
       text-align: left;
       font-size: 15px;
       color: yellow;
+    }
+    .search-disclaimer {
+      width: 100%;
+      max-width: 980px;
+      margin: auto;
+      margin-top: 15px;
+      color: white;
+      font-size: 14px;
+      font-style: italic;
+      line-height: 20px;
+      text-align: justify;
+      display: flex;
+      gap: 10px;
+      .q-icon {
+        font-size: 20px;
+      }
     }
     .search-graph {
       padding: 0 60px;
@@ -928,13 +952,17 @@ export default {
       margin: auto;
     }
     .recent-text {
+      margin-bottom: 40px;
       font-family: "Ubuntu Bold";
       font-size: 40px;
       line-height: 45.96px;
       color: var(--primary-color);
     }
     .recent-container {
-      margin-top: 30px;
+      margin-top: 20px;
+      padding: 30px;
+      box-shadow: 0px 4px 8px 0px #0000001a;
+      border-radius: 4px;
       cursor: pointer;
     }
     .recent-title {
@@ -953,20 +981,21 @@ export default {
     }
     .recent-topic {
       margin-top: 16px;
-      font-size: 14px;
+      font-size: 16px;
       line-height: 30px;
       display: flex;
-      align-items: center;
+      align-items: baseline;
       gap: 12px;
       color: black;
     }
     .recent-list-topic {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 10px;
     }
     .recent-box-topic {
-      height: 30px;
+      min-height: 30px;
       padding-top: 2px;
       padding-left: 12px;
       padding-right: 12px;
@@ -974,20 +1003,36 @@ export default {
       border-radius: 4px;
       display: flex;
       align-items: center;
-      font-size: 14px;
+      font-size: 16px;
     }
     .recent-info {
       margin-top: 23px;
+      padding-top: 15px;
+      border-top: 2px solid #dce3eb;
       display: flex;
+      justify-content: space-between;
       align-items: center;
       gap: 20px;
     }
-    .recent-info-author {
+    .recent-info-cta {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 8px;
+      gap: 20px;
+      color: #484848;
+      font-size: 18px;
+    }
+    .recent-info-cta-button {
+      width: 115px;
+      height: 35px;
+      color: #0465e4;
+      border: 1px solid #0465e4;
+      border-radius: 5px;
+      font-family: "Montserrat Bold";
+      font-size: 16px;
     }
     .recent-info-date {
+      text-wrap: nowrap;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -1005,7 +1050,7 @@ export default {
     .topic-section {
       background-color: white;
       color: var(--primary-color);
-      padding: 0px 60px 60px 60px;
+      padding: 0px 60px;
     }
     .topic-panel {
       max-width: 1227px;
@@ -1031,9 +1076,11 @@ export default {
       margin-top: 30px;
     }
     .pagination-container {
-      margin-top: 60px;
+      max-width: 1227px;
+      margin: auto;
+      margin-top: 30px;
       display: flex;
-      justify-content: center;
+      justify-content: right;
       align-items: center;
     }
     .pagination-wrapper {
@@ -1052,64 +1099,6 @@ export default {
       margin: 3px;
       width: 36px;
       height: 36px;
-    }
-    .cta-section {
-      margin-top: 105px;
-      padding: 0 60px;
-      background-color: white;
-    }
-    .cta-panel {
-      max-width: 1227px;
-      margin: auto;
-    }
-    .cta-container {
-      max-width: 1227px;
-      min-height: 267px;
-      background: linear-gradient(180deg, #015198 0%, #000f47 100%);
-      border-radius: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: white;
-      padding: 0 50px;
-    }
-    .cta-text {
-      margin-top: 50px;
-      font-family: "Montserrat Bold";
-      font-size: 26.28px;
-      line-height: 35px;
-    }
-    .cta-button {
-      margin-top: 39px;
-      margin-bottom: 50px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: left;
-      align-items: center;
-      gap: 30px;
-    }
-    .cta-button-analysis {
-      width: 209px;
-      background-color: white;
-      color: var(--primary-color);
-      border-radius: 5px;
-      font-family: "Montserrat Bold";
-      font-size: 16px;
-      line-height: 19.5px;
-      padding: 16px 22px;
-    }
-    .cta-button-report {
-      width: 209px;
-      color: white;
-      border: 1px solid white;
-      border-radius: 5px;
-      font-family: "Montserrat Bold";
-      font-size: 16px;
-      line-height: 19.5px;
-      padding: 16px 22px;
-    }
-    .cta-image-container {
-      padding-top: 30px;
     }
   }
 }
